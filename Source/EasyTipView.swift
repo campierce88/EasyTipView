@@ -110,6 +110,14 @@ public extension EasyTipView {
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
         addGestureRecognizer(tap)
         
+        if preferences.animating.dismissOnMiss {
+            backgroundView?.removeFromSuperview()
+            backgroundView = UIView(frame: UIScreen.main.bounds)
+            backgroundView!.backgroundColor = .clear
+            superview.addSubview(backgroundView!)
+            backgroundView?.addGestureRecognizer(tap)
+        }
+
         superview.addSubview(self)
         
         let animations : () -> () = {
@@ -140,6 +148,7 @@ public extension EasyTipView {
         }) { (finished) -> Void in
             completion?()
             self.delegate?.easyTipViewDidDismiss(self)
+            self.backgroundView?.removeFromSuperview()
             self.removeFromSuperview()
             self.transform = CGAffineTransform.identity
         }
@@ -195,6 +204,7 @@ open class EasyTipView: UIView {
             public var dismissFinalAlpha    = CGFloat(0)
             public var showDuration         = 0.7
             public var dismissDuration      = 0.7
+            public var dismissOnMiss        = false
         }
         
         public var drawing      = Drawing()
@@ -226,6 +236,7 @@ open class EasyTipView: UIView {
         return "<< \(type) with text : '\(text)' >>"
     }
     
+    fileprivate var backgroundView: UIView?
     fileprivate weak var presentingView: UIView?
     fileprivate weak var delegate: EasyTipViewDelegate?
     fileprivate var arrowTip = CGPoint.zero
