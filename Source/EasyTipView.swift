@@ -111,11 +111,20 @@ public extension EasyTipView {
         addGestureRecognizer(tap)
         
         if preferences.animating.dismissOnMiss {
+            let tap = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTouch(_:)))
+            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleBackgroundTouch(_:)))
+            let pan = UIPanGestureRecognizer(target: self, action: #selector(handleBackgroundTouch(_:)))
+            let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleBackgroundTouch(_:)))
+            let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handleBackgroundTouch(_:)))
             backgroundView?.removeFromSuperview()
             backgroundView = UIView(frame: UIScreen.main.bounds)
             backgroundView!.backgroundColor = .clear
             superview.addSubview(backgroundView!)
             backgroundView?.addGestureRecognizer(tap)
+            backgroundView?.addGestureRecognizer(swipe)
+            backgroundView?.addGestureRecognizer(pan)
+            backgroundView?.addGestureRecognizer(longPress)
+            backgroundView?.addGestureRecognizer(pinch)
         }
 
         superview.addSubview(self)
@@ -138,7 +147,9 @@ public extension EasyTipView {
      - parameter completion: Completion block to be executed after the EasyTipView is dismissed.
      */
     public func dismiss(withCompletion completion: (() -> ())? = nil){
-        
+        guard !dismissing else { return }
+        dismissing = true
+
         let damping = preferences.animating.springDamping
         let velocity = preferences.animating.springVelocity
         
@@ -147,6 +158,7 @@ public extension EasyTipView {
             self.alpha = self.preferences.animating.dismissFinalAlpha
         }) { (finished) -> Void in
             completion?()
+            self.dismissing = false
             self.delegate?.easyTipViewDidDismiss(self)
             self.backgroundView?.removeFromSuperview()
             self.removeFromSuperview()
@@ -237,6 +249,7 @@ open class EasyTipView: UIView {
     }
     
     fileprivate var backgroundView: UIView?
+    fileprivate var dismissing: Bool = false
     fileprivate weak var presentingView: UIView?
     fileprivate weak var delegate: EasyTipViewDelegate?
     fileprivate var arrowTip = CGPoint.zero
@@ -421,7 +434,11 @@ open class EasyTipView: UIView {
     func handleTap() {
         dismiss()
     }
-    
+
+    func handleBackgroundTouch(_ gesture: UIGestureRecognizer) {
+        dismiss()
+    }
+
     // MARK:- Drawing -
     
     fileprivate func drawBubble(_ bubbleFrame: CGRect, arrowPosition: ArrowPosition,  context: CGContext) {
